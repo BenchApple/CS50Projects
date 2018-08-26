@@ -5,18 +5,18 @@
 #include <string.h>
 #include <ctype.h>
 
-string iterate(const int len, int tracker, const char salt[],
-               const string toDecrypt, string solution) //Second line due to monitor constraints.
+string iterate(int len, int tracker, char salt[], string toDecrypt, char solution[], char guess[])
 {
     if (tracker >= len - 1) //Base case, does not return the same function.
     {
         for (int i = 'A'; i <= 'z'; i++) //Run through and test every letter.
         {
-            solution[tracker] = i;
+            guess[tracker] = i;
 
-            if (strcmp(crypt(solution, salt), toDecrypt) == 0)
+            if (strcmp(crypt(guess, salt), toDecrypt) == 0) //Check for correctness
             {
-                return solution;
+                //printf("%s\n", crypt(guess, salt));
+                return guess;
             }
 
             if (i == 'Z') //Wrap to the lowercase characters.
@@ -30,19 +30,22 @@ string iterate(const int len, int tracker, const char salt[],
     {
         for (int i = 'A'; i <= 'z'; i++) //Run through and test every letter.
         {
-            solution[tracker] = i; //Set the current position to the current letter.
+            guess[tracker] = i; //Set the current position to the current letter.
 
-            return iterate(len, tracker + 1, salt, toDecrypt, solution);
+            solution = iterate(len, tracker + 1, salt, toDecrypt, solution, guess);
+            if (strcmp(solution, "\0") != 0)
+            {
+                return solution;
+            }
             // Returns the higher levels of the recursive loop, effectively returning solutions
-        }
-    }
-}
 
-string guessSolutions(int len, char salt[], string toDecrypt) //Proxy Method.
-{
-    //guess[len] = '\0';
-    string solution = " ";
-    return iterate(len, 0, salt, toDecrypt, solution);
+            if (i == 'Z') //Wrap to the lowercase characters.
+            {
+                i = 'a' - 1; // -1 makes sure that 'a' also gets checked.
+            }
+        }
+        return "\0";
+    }
 }
 
 int main(int arc, string argv[])
@@ -55,12 +58,19 @@ int main(int arc, string argv[])
         salt[0] = encrypted[0]; //Separates the salt from the rest of the encryption.
         salt[1] = encrypted[1];
 
-        string solution = " ";
-        for (int i = 1; i <= 5; i++)
+        string solution = "\0\0\0\0\0\0"; //Set up string holders.
+        char guess[6] = "\0\0\0\0\0\0";
+
+        for (int i = 1; i <= 5; i++) //Run through each of the potential lengths.
         {
-            solution = guessSolutions(i, salt, encrypted);
-            printf("%s\n", solution);
+            solution = iterate(i, 0, salt, encrypted, solution, guess); //Find solution.
+
+            if (strcmp(solution, "\0") != 0)
+            {
+                break; //When a solution is found, break the loop for length.
+            }
         }
+        printf("%s\n", solution);
 
         return 0;
     }
@@ -70,5 +80,3 @@ int main(int arc, string argv[])
         return 1;
     }
 }
-
-
